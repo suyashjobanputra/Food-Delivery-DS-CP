@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodPulse AI — Food Delivery Time & Customer Satisfaction Analytics</title>
+  <meta name="description" content="Machine learning analytics and live simulation engine for food delivery duration prediction and customer satisfaction classification. Built for VIT Data Science Mid-Sem Review.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation / Brand Header -->
+    <header class="top-header">
+      <div class="brand-group">
+        <div class="brand-logo">
+          <span class="logo-icon">⚡</span>
+        </div>
+        <div class="brand-text">
+          <h1>FoodPulse <span class="accent-text">AI</span></h1>
+          <p class="brand-sub">Food Delivery Duration & Customer Satisfaction Analytics Engine</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <div class="live-pill" id="liveStatusBadge">
+          <span class="pulse-dot"></span>
+          <span>ML Pipeline Live</span>
+        </div>
+        <div class="academic-badge">
+          <span>VIT DS Mid-Sem Prototype</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Top KPI Highlights Bar -->
+    <section class="kpi-banner" aria-label="Executive KPI Metrics">
+      <div class="kpi-chip">
+        <span class="kpi-label">Cleaned Dataset</span>
+        <span class="kpi-value" id="kpiDatasetSize">12,000 <small>orders</small></span>
+        <span class="kpi-trend trend-neutral">40 duplicates purged</span>
+      </div>
+      <div class="kpi-chip">
+        <span class="kpi-label">Mean Delivery Time</span>
+        <span class="kpi-value" id="kpiMeanDelivery">59.9 <small>min</small></span>
+        <span class="kpi-trend trend-warn">Median: 59.1 min</span>
+      </div>
+      <div class="kpi-chip">
+        <span class="kpi-label">Late vs Estimate Rate</span>
+        <span class="kpi-value" id="kpiLateRate">75.4%</span>
+        <span class="kpi-trend trend-danger">Critical bottleneck</span>
+      </div>
+      <div class="kpi-chip">
+        <span class="kpi-label">Delivery vs Rating Cor.</span>
+        <span class="kpi-value" id="kpiCorrelation">-0.672</span>
+        <span class="kpi-trend trend-danger">Strong inverse relation</span>
+      </div>
+      <div class="kpi-chip">
+        <span class="kpi-label">Linear Reg. R²</span>
+        <span class="kpi-value" id="kpiR2">0.903</span>
+        <span class="kpi-trend trend-good">MAE: ±3.32 min</span>
+      </div>
+      <div class="kpi-chip">
+        <span class="kpi-label">RF Classifier F1</span>
+        <span class="kpi-value" id="kpiF1">0.828</span>
+        <span class="kpi-trend trend-good">Accuracy: 78.1%</span>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="tab-btn active" id="tabBtnSimulator" data-tab="simulator" role="tab" aria-selected="true">
+        <span class="tab-icon">🎛️</span>
+        <span>Prediction Simulator</span>
+      </button>
+      <button class="tab-btn" id="tabBtnAnalytics" data-tab="analytics" role="tab" aria-selected="false">
+        <span class="tab-icon">📊</span>
+        <span>EDA & Visualizations</span>
+      </button>
+      <button class="tab-btn" id="tabBtnDataset" data-tab="dataset" role="tab" aria-selected="false">
+        <span class="tab-icon">🗄️</span>
+        <span>Dataset Explorer</span>
+      </button>
+      <button class="tab-btn" id="tabBtnModels" data-tab="models" role="tab" aria-selected="false">
+        <span class="tab-icon">🧠</span>
+        <span>Model Architecture</span>
+      </button>
+    </nav>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="content-container">
+
+      <!-- ============================================================ -->
+      <!-- TAB 1: PREDICTION SIMULATOR -->
+      <!-- ============================================================ -->
+      <section class="tab-panel active" id="tab-simulator" role="tabpanel">
+        
+        <!-- Preset Scenario Quick-Bar -->
+        <div class="presets-container">
+          <span class="preset-label">Quick Scenario Presets:</span>
+          <div class="preset-buttons">
+            <button class="preset-pill active" id="presetStandard" data-preset="standard">
+              ☕ Standard Afternoon Order
+            </button>
+            <button class="preset-pill" id="presetMonsoon" data-preset="monsoon">
+              🌧️ Monsoon Dinner Peak (High Delay)
+            </button>
+            <button class="preset-pill" id="presetExpress" data-preset="express">
+              ⚡ Ultra-Express Nearby Run
+            </button>
+            <button class="preset-pill" id="presetFeast" data-preset="feast">
+              🍔 Massive Weekend Group Feast
+            </button>
+          </div>
+        </div>
+
+        <div class="simulator-grid">
+          <!-- Left: Order Feature Inputs -->
+          <div class="panel-card input-card">
+            <div class="card-header">
+              <h2 class="card-title">Order Parameters & Ambient Conditions</h2>
+              <span class="card-sub">Fine-tune variables to simulate real-time AI predictions</span>
+            </div>
+
+            <form id="predictionForm" class="sim-form" onsubmit="return false;">
+              <!-- Distance -->
+              <div class="form-group">
+                <div class="slider-header">
+                  <label for="inputDistance" class="input-label">Delivery Distance</label>
+                  <span class="value-chip" id="valDistance">5.5 km</span>
+                </div>
+                <input type="range" id="inputDistance" min="0.5" max="15.0" step="0.1" value="5.5" class="custom-slider">
+                <div class="slider-range-labels"><span>0.5 km</span><span>7.5 km</span><span>15.0 km</span></div>
+              </div>
+
+              <!-- Prep Time -->
+              <div class="form-group">
+                <div class="slider-header">
+                  <label for="inputPrepTime" class="input-label">Kitchen Prep Time</label>
+                  <span class="value-chip" id="valPrepTime">20 min</span>
+                </div>
+                <input type="range" id="inputPrepTime" min="8" max="40" step="1" value="20" class="custom-slider">
+                <div class="slider-range-labels"><span>8 min (Fast)</span><span>24 min</span><span>40 min (Slow)</span></div>
+              </div>
+
+              <!-- Estimated Delivery Buffer -->
+              <div class="form-group">
+                <div class="slider-header">
+                  <label for="inputEstDelivery" class="input-label">Platform Estimated ETA</label>
+                  <span class="value-chip" id="valEstDelivery">45 min</span>
+                </div>
+                <input type="range" id="inputEstDelivery" min="20" max="100" step="1" value="45" class="custom-slider">
+                <div class="slider-range-labels"><span>20 min</span><span>60 min</span><span>100 min</span></div>
+              </div>
+
+              <!-- Grid of categorical selectors -->
+              <div class="form-row two-col">
+                <div class="form-group">
+                  <label class="input-label">Traffic Congestion</label>
+                  <div class="segmented-control" id="trafficSelector">
+                    <button type="button" class="segment-btn" data-value="Low">Low</button>
+                    <button type="button" class="segment-btn active" data-value="Medium">Medium</button>
+                    <button type="button" class="segment-btn" data-value="High">High</button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="input-label">Weather Conditions</label>
+                  <div class="segmented-control" id="weatherSelector">
+                    <button type="button" class="segment-btn active" data-value="Clear">☀️ Clear</button>
+                    <button type="button" class="segment-btn" data-value="Cloudy">⛅ Cloudy</button>
+                    <button type="button" class="segment-btn" data-value="Rain">🌧️ Rain</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row two-col">
+                <!-- Order Hour -->
+                <div class="form-group">
+                  <div class="slider-header">
+                    <label for="inputHour" class="input-label">Time of Day (24h)</label>
+                    <span class="value-chip" id="valHour">19:00 (Dinner)</span>
+                  </div>
+                  <input type="range" id="inputHour" min="0" max="23" step="1" value="19" class="custom-slider">
+                  <div class="slider-range-labels"><span>00:00</span><span>12:00</span><span>23:00</span></div>
+                </div>
+
+                <!-- Number of Items -->
+                <div class="form-group">
+                  <div class="slider-header">
+                    <label for="inputItems" class="input-label">Cart Items</label>
+                    <span class="value-chip" id="valItems">3 items</span>
+                  </div>
+                  <input type="range" id="inputItems" min="1" max="10" step="1" value="3" class="custom-slider">
+                  <div class="slider-range-labels"><span>1 item</span><span>5 items</span><span>10 items</span></div>
+                </div>
+              </div>
+
+              <div class="form-row two-col">
+                <!-- Order Value -->
+                <div class="form-group">
+                  <div class="slider-header">
+                    <label for="inputOrderValue" class="input-label">Order Value (₹)</label>
+                    <span class="value-chip" id="valOrderValue">₹ 420</span>
+                  </div>
+                  <input type="range" id="inputOrderValue" min="80" max="850" step="10" value="420" class="custom-slider">
+                  <div class="slider-range-labels"><span>₹80</span><span>₹450</span><span>₹850</span></div>
+                </div>
+
+                <!-- Courier Rating -->
+                <div class="form-group">
+                  <div class="slider-header">
+                    <label for="inputCourierRating" class="input-label">Courier Rating</label>
+                    <span class="value-chip" id="valCourierRating">4.7 ★</span>
+                  </div>
+                  <input type="range" id="inputCourierRating" min="1.0" max="5.0" step="0.1" value="4.7" class="custom-slider">
+                  <div class="slider-range-labels"><span>1.0 ★</span><span>3.0 ★</span><span>5.0 ★</span></div>
+                </div>
+              </div>
+
+              <!-- Restaurant Rating -->
+              <div class="form-group">
+                <div class="slider-header">
+                  <label for="inputRestRating" class="input-label">Restaurant Quality Rating</label>
+                  <span class="value-chip" id="valRestRating">4.4 ★</span>
+                </div>
+                <input type="range" id="inputRestRating" min="1.0" max="5.0" step="0.1" value="4.4" class="custom-slider">
+                <div class="slider-range-labels"><span>1.0 ★</span><span>3.0 ★</span><span>5.0 ★</span></div>
+              </div>
+
+              <button type="button" id="btnRunPrediction" class="btn-primary-action">
+                <span class="btn-icon">⚡</span>
+                <span>Recalculate AI Predictions</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Right: Output Telemetry & Risk Intelligence -->
+          <div class="panel-card output-card">
+            <div class="card-header">
+              <h2 class="card-title">Live ML Inference Telemetry</h2>
+              <span class="card-sub">Instant predictions from Linear Regression & Random Forest models</span>
+            </div>
+
+            <!-- Predicted Delivery Time Card -->
+            <div class="result-tile primary-result">
+              <div class="tile-icon-wrap time-icon">⏱️</div>
+              <div class="tile-details">
+                <span class="tile-subtitle">Predicted Actual Delivery Time (Regression)</span>
+                <div class="tile-metric-row">
+                  <span class="hero-metric" id="resDeliveryTime">48.2</span>
+                  <span class="metric-unit">minutes</span>
+                </div>
+                <div class="confidence-range" id="resConfidenceRange">
+                  Confidence Interval: <strong>44.9 – 51.5 min</strong> (MAE ±3.32m)
+                </div>
+              </div>
+            </div>
+
+            <!-- ETA vs Predicted Delay Status -->
+            <div class="result-tile delay-tile" id="delayTileWrapper">
+              <div class="tile-icon-wrap" id="delayIcon">🚦</div>
+              <div class="tile-details">
+                <span class="tile-subtitle">Schedule Adherence vs Platform ETA (<span id="resPlatformEta">45 min</span>)</span>
+                <div class="status-indicator-row">
+                  <span class="status-badge status-warning" id="resDelayStatus">Moderate Delay (+3.2 min)</span>
+                  <span class="delta-value" id="resDeltaValue">+3.2 min</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" id="resDelayBar" style="width: 55%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Satisfaction Classifier Card -->
+            <div class="result-tile satisfaction-tile" id="satTileWrapper">
+              <div class="radial-gauge-container">
+                <svg class="radial-gauge" viewBox="0 0 100 100">
+                  <circle class="gauge-bg" cx="50" cy="50" r="42" />
+                  <circle class="gauge-fill" id="satGaugeCircle" cx="50" cy="50" r="42" />
+                </svg>
+                <div class="gauge-inner-text">
+                  <span class="gauge-pct" id="resSatProb">74%</span>
+                  <span class="gauge-sub">Probability</span>
+                </div>
+              </div>
+              <div class="tile-details">
+                <span class="tile-subtitle">Customer Satisfaction Prediction (Random Forest)</span>
+                <div class="satisfaction-outcome">
+                  <span class="outcome-pill outcome-satisfied" id="resSatisfaction">Satisfied (Rating ≥ 4)</span>
+                  <span class="risk-badge risk-low" id="resRiskLevel">Low Churn Risk</span>
+                </div>
+                <p class="outcome-explanation" id="resSatExplanation">
+                  Estimated delivery window and restaurant rating are favorable for a positive experience.
+                </p>
+              </div>
+            </div>
+
+            <!-- Actionable Recommendations Card -->
+            <div class="result-tile reco-tile">
+              <div class="reco-header">
+                <span class="reco-icon">💡</span>
+                <h3 class="reco-title">Automated Dispatch & CRM Recommendations</h3>
+              </div>
+              <ul class="reco-list" id="recoList">
+                <li>Operational parameters optimal: Standard delivery protocol on track.</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TAB 2: EDA & VISUALIZATIONS GALLERY -->
+      <!-- ============================================================ -->
+      <section class="tab-panel" id="tab-analytics" role="tabpanel">
+        <div class="analytics-header">
+          <h2>Exploratory Data Analysis & Statistical Findings</h2>
+          <p>Generated visualizations from the 12,000 prototype order records. Click any chart for deep insights.</p>
+        </div>
+
+        <div class="charts-gallery-grid">
+          <!-- Chart 1 -->
+          <div class="chart-card">
+            <div class="chart-visual">
+              <img src="/charts/01_delivery_distribution.png" alt="Distribution of Delivery Time" class="chart-img" loading="lazy">
+            </div>
+            <div class="chart-meta">
+              <span class="chart-tag">01 • Distribution</span>
+              <h3>Delivery Time Distribution</h3>
+              <p>The delivery time is bell-shaped with a mean of <strong>59.9 minutes</strong> (median 59.1m). Most orders complete between 45 and 75 minutes, with IQR clipping handling extreme tail anomalies.</p>
+              <div class="chart-stats-pill">
+                <span>Mean: 59.9 min</span> • <span>Std: 14.4 min</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 2 -->
+          <div class="chart-card">
+            <div class="chart-visual">
+              <img src="/charts/02_distance_delivery.png" alt="Distance vs Delivery Time" class="chart-img" loading="lazy">
+            </div>
+            <div class="chart-meta">
+              <span class="chart-tag">02 • Correlation</span>
+              <h3>Distance vs Actual Delivery Time</h3>
+              <p>Delivery time scales steadily with distance. Traffic congestion and rain weather create noticeable upwards variance above 8 km transit corridors.</p>
+              <div class="chart-stats-pill">
+                <span>Range: 0.5 - 15 km</span> • <span>Strong association</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 3 -->
+          <div class="chart-card">
+            <div class="chart-visual">
+              <img src="/charts/03_delivery_rating.png" alt="Delivery Time vs Customer Rating" class="chart-img" loading="lazy">
+            </div>
+            <div class="chart-meta">
+              <span class="chart-tag">03 • Satisfaction Impact</span>
+              <h3>Delivery Time vs Customer Rating</h3>
+              <p>Demonstrates a strong inverse correlation of <strong>-0.672</strong>. When deliveries exceed 60 minutes, customer satisfaction ratings plunge precipitously below 3.5 stars.</p>
+              <div class="chart-stats-pill">
+                <span>Pearson r = -0.672</span> • <span>High churn threshold</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 4 -->
+          <div class="chart-card">
+            <div class="chart-visual">
+              <img src="/charts/04_rating_by_delivery_band.png" alt="Customer Rating by Delivery Time Band" class="chart-img" loading="lazy">
+            </div>
+            <div class="chart-meta">
+              <span class="chart-tag">04 • Cohort Analysis</span>
+              <h3>Rating by Delivery Band Cohort</h3>
+              <p>Categorization into 4 key operational bands (≤30 min, 31–45 min, 46–60 min, and &gt;60 min). Orders delivered in under 30 minutes maintain a stellar 4.8+ average rating.</p>
+              <div class="chart-stats-pill">
+                <span>&le;30 min: ~4.8★</span> • <span>&gt;60 min: ~3.2★</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 5 -->
+          <div class="chart-card featured-chart">
+            <div class="chart-visual">
+              <img src="/charts/05_feature_importance.png" alt="Random Forest Feature Importance" class="chart-img" loading="lazy">
+            </div>
+            <div class="chart-meta">
+              <span class="chart-tag">05 • Machine Learning</span>
+              <h3>Random Forest Feature Importance</h3>
+              <p>Estimated Delivery Time (32.8%) is the premier predictor of customer satisfaction, followed by Restaurant Rating (14.2%) and Distance (13.3%). Monsoon rain is the top environmental factor.</p>
+              <div class="chart-stats-pill">
+                <span>Top Factor: Estimated ETA (32.8%)</span> • <span>RF 300 Trees</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TAB 3: DATASET EXPLORER -->
+      <!-- ============================================================ -->
+      <section class="tab-panel" id="tab-dataset" role="tabpanel">
+        <div class="dataset-control-panel">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="datasetSearchInput" placeholder="Search by Order ID (e.g. ORD_0001)...">
+          </div>
+
+          <div class="filter-controls">
+            <div class="select-group">
+              <label for="filterSatisfaction">Satisfaction:</label>
+              <select id="filterSatisfaction" class="custom-select">
+                <option value="">All Outcomes</option>
+                <option value="Satisfied">Satisfied</option>
+                <option value="Not Satisfied">Not Satisfied</option>
+              </select>
+            </div>
+
+            <div class="select-group">
+              <label for="filterTraffic">Traffic:</label>
+              <select id="filterTraffic" class="custom-select">
+                <option value="">All Traffic</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+
+            <div class="select-group">
+              <label for="filterWeather">Weather:</label>
+              <select id="filterWeather" class="custom-select">
+                <option value="">All Weather</option>
+                <option value="Clear">Clear</option>
+                <option value="Cloudy">Cloudy</option>
+                <option value="Rain">Rain</option>
+              </select>
+            </div>
+
+            <button type="button" id="btnResetFilters" class="btn-secondary">Reset Filters</button>
+          </div>
+        </div>
+
+        <div class="dataset-summary-bar">
+          <span id="datasetCountInfo">Showing 1–15 of 12,000 cleaned orders</span>
+          <div class="table-pagination">
+            <button id="btnPrevPage" class="pg-btn" disabled>&larr; Prev</button>
+            <span id="pageIndicator" class="pg-indicator">Page 1</span>
+            <button id="btnNextPage" class="pg-btn">Next &rarr;</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="ordersTable">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Distance (km)</th>
+                <th>Prep (min)</th>
+                <th>Traffic</th>
+                <th>Weather</th>
+                <th>Hour</th>
+                <th>Items</th>
+                <th>Order Value</th>
+                <th>Rest. Rating</th>
+                <th>Courier Rating</th>
+                <th>Est. Min</th>
+                <th>Actual Min</th>
+                <th>Cust. Rating</th>
+                <th>Satisfaction</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <tr>
+                <td colspan="14" class="loading-cell">Loading dataset records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TAB 4: MODEL ARCHITECTURE & DIAGNOSTICS -->
+      <!-- ============================================================ -->
+      <section class="tab-panel" id="tab-models" role="tabpanel">
+        <div class="models-grid">
+          
+          <!-- Linear Regression Diagnostics -->
+          <div class="panel-card model-diag-card">
+            <div class="card-header">
+              <span class="badge-algo algo-reg">Regression Model</span>
+              <h2 class="card-title">Multiple Linear Regression</h2>
+              <span class="card-sub">Predicts continuous delivery duration (`actual_delivery_min`)</span>
+            </div>
+
+            <div class="model-stats-row">
+              <div class="stat-box">
+                <span class="stat-number">0.903</span>
+                <span class="stat-desc">R² Goodness of Fit</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number">3.32 <small>min</small></span>
+                <span class="stat-desc">Mean Absolute Error</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number">7</span>
+                <span class="stat-desc">Active Features</span>
+              </div>
+            </div>
+
+            <h3 class="section-subtitle">Learned Feature Coefficients & Weightings</h3>
+            <div class="coefficients-list" id="coefficientsContainer">
+              <!-- Rendered via JS -->
+              <div class="coef-row">
+                <span class="coef-name">estimated_delivery_min</span>
+                <span class="coef-bar-wrap"><span class="coef-bar positive" style="width: 85%;"></span></span>
+                <span class="coef-value">+1.2950</span>
+              </div>
+              <div class="coef-row">
+                <span class="coef-name">courier_rating</span>
+                <span class="coef-bar-wrap"><span class="coef-bar positive" style="width: 25%;"></span></span>
+                <span class="coef-value">+0.1659</span>
+              </div>
+              <div class="coef-row">
+                <span class="coef-name">restaurant_rating</span>
+                <span class="coef-bar-wrap"><span class="coef-bar negative" style="width: 5%;"></span></span>
+                <span class="coef-value">-0.0043</span>
+              </div>
+              <div class="coef-row">
+                <span class="coef-name">hour</span>
+                <span class="coef-bar-wrap"><span class="coef-bar negative" style="width: 15%;"></span></span>
+                <span class="coef-value">-0.0359</span>
+              </div>
+              <div class="coef-row">
+                <span class="coef-name">preparation_time_min</span>
+                <span class="coef-bar-wrap"><span class="coef-bar negative" style="width: 35%;"></span></span>
+                <span class="coef-value">-0.2627</span>
+              </div>
+              <div class="coef-row">
+                <span class="coef-name">number_of_items</span>
+                <span class="coef-bar-wrap"><span class="coef-bar negative" style="width: 40%;"></span></span>
+                <span class="coef-value">-0.2942</span>
+              </div>
+              <div class="coef-row">
+                <span class="coef-name">distance_km</span>
+                <span class="coef-bar-wrap"><span class="coef-bar negative" style="width: 70%;"></span></span>
+                <span class="coef-value">-0.9139</span>
+              </div>
+            </div>
+            <p class="model-note">
+              <strong>Intercept:</strong> -3.4274. The model leverages estimated delivery time as the anchor anchor, adjusting dynamically based on transit difficulty.
+            </p>
+          </div>
+
+          <!-- Random Forest Diagnostics -->
+          <div class="panel-card model-diag-card">
+            <div class="card-header">
+              <span class="badge-algo algo-clf">Classification Pipeline</span>
+              <h2 class="card-title">Random Forest Classifier</h2>
+              <span class="card-sub">Classifies customer satisfaction (Satisfied rating ≥ 4 vs Not Satisfied)</span>
+            </div>
+
+            <div class="model-stats-row">
+              <div class="stat-box">
+                <span class="stat-number">78.1%</span>
+                <span class="stat-desc">Test Accuracy</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number">0.828</span>
+                <span class="stat-desc">F1 Score (Satisfied)</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number">300</span>
+                <span class="stat-desc">Ensemble Trees</span>
+              </div>
+            </div>
+
+            <h3 class="section-subtitle">Random Forest Feature Importance Hierarchy</h3>
+            <div class="importance-list" id="importanceContainer">
+              <!-- Rendered via JS -->
+            </div>
+
+            <div class="confusion-matrix-box">
+              <h4 class="cm-title">Prototype Validation Matrix</h4>
+              <div class="cm-grid">
+                <div class="cm-cell header-cell"></div>
+                <div class="cm-cell header-cell">Pred: Dissatisfied</div>
+                <div class="cm-cell header-cell">Pred: Satisfied</div>
+                <div class="cm-cell label-cell">Actual: Dissatisfied</div>
+                <div class="cm-cell tn-cell">TN: 648</div>
+                <div class="cm-cell fp-cell">FP: 346</div>
+                <div class="cm-cell label-cell">Actual: Satisfied</div>
+                <div class="cm-cell fn-cell">FN: 316</div>
+                <div class="cm-cell tp-cell">TP: 1,090</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span>Food Delivery Time & Customer Satisfaction Analytics &bull; Mid-Semester Review-2</span>
+      </div>
+      <div class="footer-right">
+        <span>Vellore Institute of Technology &bull; Data Science Division</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

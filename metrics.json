@@ -1,0 +1,14 @@
+{
+  "prototype_records": 12000,
+  "raw_records_with_duplicates": 12040,
+  "cleaned_records": 12000,
+  "mean_delivery_time_min": 59.9,
+  "median_delivery_time_min": 59.1,
+  "mean_customer_rating": 4.12,
+  "delivery_rating_correlation": -0.672,
+  "late_vs_estimate_rate": 0.754,
+  "linear_regression_mae_min": 3.32,
+  "linear_regression_r2": 0.903,
+  "random_forest_accuracy": 0.781,
+  "random_forest_f1_satisfied": 0.828
+}
